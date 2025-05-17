@@ -10,8 +10,7 @@ API_HASH = '5fb73e6994d62ba1a7b8009991dd74b6'
 BOT_TOKEN = '7652012423:AAEQQ_DD-suI3HH_TDxhFpZfI28W9kn-Xcs'
 
 TARGET_WORDS = ["1074804932", "1077880102", "1893104473"]
-FILENAME_REPLACEMENT = "Gate_Sena"
-CAPTION_REPLACEMENT = "@Gate_Sena"
+REPLACEMENT = "@Gate_Sena"
 THUMB_DIR = "downloads/thumbs"
 os.makedirs(THUMB_DIR, exist_ok=True)
 
@@ -22,7 +21,7 @@ def get_user_thumb(user_id):
     return path if os.path.exists(path) else None
 
 def human_readable_size(size, decimal_places=2):
-    for unit in ['B', 'KB', 'MB', 'GB']:
+    for unit in ['B','KB','MB','GB']:
         if size < 1024:
             return f"{size:.{decimal_places}f}{unit}"
         size /= 1024
@@ -47,8 +46,8 @@ async def start(client, message: Message):
     await message.reply(
         "Welcome!\n\n"
         "Send a PDF and I will:\n"
-        "- Rename file by replacing target words and @bijzli with Gate_Sena (in file)\n"
-        "- Replace @bijzli with @Gate_Sena in caption\n"
+        "- Rename file by replacing target words with @Gate_Sena\n"
+        "- Replace @bijzli in filename and caption\n"
         "- Show progress and use your custom thumbnail\n\n"
         "Commands:\n"
         "/delthumb – Delete saved thumbnail\n"
@@ -81,11 +80,11 @@ async def auto_rename_pdf(client, message: Message):
     start_time = time.time()
     file_path = await message.download(progress=lambda c, t: progress(c, t, progress_msg, start_time))
 
-    # Replace target words and @bijzli in original filename (no @ in filenames)
+    # Replace target words and @bijzli in original filename
     cleaned_name = doc.file_name
     for word in TARGET_WORDS:
-        cleaned_name = cleaned_name.replace(word, FILENAME_REPLACEMENT)
-    cleaned_name = re.sub(r"@bijzli", FILENAME_REPLACEMENT, cleaned_name, flags=re.IGNORECASE)
+        cleaned_name = cleaned_name.replace(word, REPLACEMENT)
+    cleaned_name = re.sub(r"@bijzli", REPLACEMENT, cleaned_name, flags=re.IGNORECASE)
 
     # Rename file locally
     cleaned_path = os.path.join(os.path.dirname(file_path), cleaned_name)
@@ -96,9 +95,9 @@ async def auto_rename_pdf(client, message: Message):
     await progress_msg.edit("Uploading...")
     start_time = time.time()
 
-    # Replace @bijzli with @Gate_Sena in caption
+    # Replace @bijzli in caption but keep original caption content
     original_caption = message.caption or ""
-    updated_caption = re.sub(r"@bijzli", CAPTION_REPLACEMENT, original_caption, flags=re.IGNORECASE)
+    updated_caption = re.sub(r"@bijzli", REPLACEMENT, original_caption, flags=re.IGNORECASE)
 
     await message.reply_document(
         document=cleaned_path,
