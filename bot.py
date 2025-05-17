@@ -96,14 +96,14 @@ async def auto_rename_pdf(client, message: Message):
     await progress_msg.edit("Uploading...")
     start_time = time.time()
 
-    # Replace @bijzli in caption
+    # Replace @bijzli in original caption only (preserve original text structure)
     original_caption = message.caption or ""
-    updated_caption = re.sub(r"@bijzli", REPLACEMENT, original_caption, flags=re.IGNORECASE)
+    final_caption = re.sub(r"@bijzli", REPLACEMENT, original_caption, flags=re.IGNORECASE)
 
     await message.reply_document(
         document=cleaned_path,
         thumb=thumb_path,
-        caption=f"{REPLACEMENT} - `{cleaned_name}`",
+        caption=final_caption,
         progress=lambda c, t: progress(c, t, progress_msg, start_time)
     )
 
