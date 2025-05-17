@@ -1,9 +1,9 @@
 import os
 import time
+import re
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import MessageNotModified
-import re
 
 API_ID = '22648485'
 API_HASH = '8a714c643f86acb3d07a2baa4831f95b'
@@ -46,8 +46,8 @@ async def start(client, message: Message):
     await message.reply(
         "**Welcome!**\n\n"
         "Send a PDF and I will:\n"
-        "- Rename file to `@Gate_Sena.pdf`\n"
-        "- Replace @bijzli in file name/caption\n"
+        "- Rename file by replacing target words with @Gate_Sena\n"
+        "- Replace @bijzli in filename and caption\n"
         "- Show progress and use your custom thumbnail\n\n"
         "**Commands:**\n"
         "`/delthumb` – Delete saved thumbnail\n"
@@ -80,15 +80,14 @@ async def auto_rename_pdf(client, message: Message):
     start_time = time.time()
     file_path = await message.download(progress=lambda c, t: progress(c, t, progress_msg, start_time))
 
-    # Remove TARGET_WORDS and replace @bijzli in original filename (optional, but final name is fixed)
+    # Replace target words and @bijzli in original filename
     cleaned_name = doc.file_name
     for word in TARGET_WORDS:
         cleaned_name = cleaned_name.replace(word, REPLACEMENT)
     cleaned_name = re.sub(r"@bijzli", REPLACEMENT, cleaned_name, flags=re.IGNORECASE)
 
-    # Final filename override:
-    cleaned_name = "@Gate_Sena.pdf"
-    cleaned_path = cleaned_name
+    # Rename file locally
+    cleaned_path = os.path.join(os.path.dirname(file_path), cleaned_name)
     os.rename(file_path, cleaned_path)
 
     thumb_path = get_user_thumb(message.from_user.id)
@@ -96,14 +95,14 @@ async def auto_rename_pdf(client, message: Message):
     await progress_msg.edit("Uploading...")
     start_time = time.time()
 
-    # Replace @bijzli in original caption only (preserve original text structure)
+    # Replace @bijzli in caption but keep original caption content
     original_caption = message.caption or ""
-    final_caption = re.sub(r"@bijzli", REPLACEMENT, original_caption, flags=re.IGNORECASE)
+    updated_caption = re.sub(r"@bijzli", REPLACEMENT, original_caption, flags=re.IGNORECASE)
 
     await message.reply_document(
         document=cleaned_path,
         thumb=thumb_path,
-        caption=final_caption,
+        caption=updated_caption,
         progress=lambda c, t: progress(c, t, progress_msg, start_time)
     )
 
