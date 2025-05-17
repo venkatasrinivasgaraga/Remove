@@ -84,7 +84,7 @@ async def auto_rename_pdf(client, message: Message):
         cleaned_name = cleaned_name.replace(word, REPLACEMENT)
 
     cleaned_name = cleaned_name.replace("__", "_").strip("_").strip()
-    cleaned_path = f"cleaned_{cleaned_name}"
+    cleaned_path = f"cleaned_{name}"
     os.rename(file_path, cleaned_path)
 
     await progress_msg.edit("Uploading...")
