@@ -2,9 +2,9 @@ import os
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-API_ID = 'YOUR_API_ID'
-API_HASH = 'YOUR_API_HASH'
-BOT_TOKEN = 'YOUR_BOT_TOKEN'
+API_ID = '22648485'
+API_HASH = '8a714c643f86acb3d07a2baa4831f95b'
+BOT_TOKEN = '7846507681:AAGEhlMgStbUY5mb9G-3fjhicGfrCZOJRwI'
 
 # Words to remove from PDF file names
 DEFAULT_REMOVE_WORDS = ["1074804932", "1077880102"]
