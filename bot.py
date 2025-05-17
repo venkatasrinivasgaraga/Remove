@@ -3,19 +3,18 @@ import time
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import MessageNotModified
+import re
 
 API_ID = '22648485'
 API_HASH = '8a714c643f86acb3d07a2baa4831f95b'
 BOT_TOKEN = '7846507681:AAGEhlMgStbUY5mb9G-3fjhicGfrCZOJRwI'
 
-# Words to replace
 TARGET_WORDS = ["1074804932", "1077880102", "1893104473"]
 REPLACEMENT = "@Gate_Sena"
-
-bot = Client("pdf_autorename_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-
 THUMB_DIR = "downloads/thumbs"
 os.makedirs(THUMB_DIR, exist_ok=True)
+
+bot = Client("pdf_autorename_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 def get_user_thumb(user_id):
     path = os.path.join(THUMB_DIR, f"{user_id}.jpg")
@@ -46,26 +45,29 @@ async def progress(current, total, message, start_time):
 async def start(client, message: Message):
     await message.reply(
         "**Welcome!**\n\n"
-        "Send me a PDF and I’ll rename it by replacing numbers with `@Gate_Sena`, show progress, and apply your thumbnail.\n\n"
+        "Send a PDF and I will:\n"
+        "- Rename file to `@Gate_Sena.pdf`\n"
+        "- Replace @bijzli in file name/caption\n"
+        "- Show progress and use your custom thumbnail\n\n"
         "**Commands:**\n"
-        "`/delthumb` – Delete your saved thumbnail\n"
-        "Send any image to set as your thumbnail."
+        "`/delthumb` – Delete saved thumbnail\n"
+        "Send a photo to set your thumbnail"
     )
 
 @bot.on_message(filters.command("delthumb"))
 async def del_thumb(client, message: Message):
-    user_thumb = get_user_thumb(message.from_user.id)
-    if user_thumb:
-        os.remove(user_thumb)
+    path = get_user_thumb(message.from_user.id)
+    if path:
+        os.remove(path)
         await message.reply("✅ Thumbnail deleted.")
     else:
-        await message.reply("❌ No thumbnail was set.")
+        await message.reply("❌ No thumbnail set.")
 
 @bot.on_message(filters.photo & filters.private)
 async def save_thumb(client, message: Message):
     path = os.path.join(THUMB_DIR, f"{message.from_user.id}.jpg")
     await message.download(file_name=path)
-    await message.reply("✅ Thumbnail saved successfully! It will be used for all future files.")
+    await message.reply("✅ Thumbnail saved successfully.")
 
 @bot.on_message(filters.document & filters.private)
 async def auto_rename_pdf(client, message: Message):
@@ -78,23 +80,30 @@ async def auto_rename_pdf(client, message: Message):
     start_time = time.time()
     file_path = await message.download(progress=lambda c, t: progress(c, t, progress_msg, start_time))
 
-    # Replace words
+    # Remove TARGET_WORDS and replace @bijzli in original filename (optional, but final name is fixed)
     cleaned_name = doc.file_name
     for word in TARGET_WORDS:
         cleaned_name = cleaned_name.replace(word, REPLACEMENT)
+    cleaned_name = re.sub(r"@bijzli", REPLACEMENT, cleaned_name, flags=re.IGNORECASE)
 
-    cleaned_name = cleaned_name.replace("__", "_").strip("_").strip()
-    cleaned_path = f"cleaned_{name}"
+    # Final filename override:
+    cleaned_name = "@Gate_Sena.pdf"
+    cleaned_path = cleaned_name
     os.rename(file_path, cleaned_path)
 
-    await progress_msg.edit("Uploading...")
     thumb_path = get_user_thumb(message.from_user.id)
+
+    await progress_msg.edit("Uploading...")
     start_time = time.time()
+
+    # Replace @bijzli in caption
+    original_caption = message.caption or ""
+    updated_caption = re.sub(r"@bijzli", REPLACEMENT, original_caption, flags=re.IGNORECASE)
 
     await message.reply_document(
         document=cleaned_path,
         thumb=thumb_path,
-        caption=f"Here is your renamed PDF: `{cleaned_name}`",
+        caption=f"{REPLACEMENT} - `{cleaned_name}`",
         progress=lambda c, t: progress(c, t, progress_msg, start_time)
     )
 
